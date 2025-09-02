@@ -7,7 +7,7 @@
 # 服务器组配置
 declare -A SERVER_GROUPS=(
     [test]="WIK.VPN.Dev"
-    [prod]="WIK.VPN.Hk.Master10.1.3.61"
+    [prod]="WIK.VPN.HK.Master10.1.3.61"
 )
 
 # 部署路径配置
