@@ -1,5 +1,1 @@
-*
-!.editorconfig
-!*.zsh
-!*.jpg
-!*.sql
+*.log
