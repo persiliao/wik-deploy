@@ -3,7 +3,7 @@ source ~/.zshrc
 
 # 获取当前日期和一周前的日期
 today=$(date +%Y-%m-%d)
-week_ago=$(date -v-15d +%Y-%m-%d)
+week_ago=$(date -v-5d +%Y-%m-%d)
 
 # 创建目标目录（如果不存在）
 log_dir="$(dirname $(realpath $0))/logs"
