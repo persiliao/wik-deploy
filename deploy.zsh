@@ -18,6 +18,9 @@ declare -A DEPLOY_PATHS=(
     [prod_apk]="/opt/prod/icp/apk"
 )
 
+# 日志文件配置
+DEPLOY_LOG="deploy.log"
+
 # ========================
 # 核心部署逻辑
 # ========================
@@ -29,6 +32,17 @@ detect_environment() {
         *-prod.*) echo "prod" ;;
         *) echo "unknown" ;;
     esac
+}
+
+# 记录部署日志
+log_deployment() {
+    local file=$1
+    local env=$2
+    local server=$3
+    local deploy_status=$4  # 修改变量名避免使用关键字
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    
+    echo "[${timestamp}] ${file} -> ${env}@${server}: ${deploy_status}" >> "${DEPLOY_LOG}"
 }
 
 # 安全部署函数
@@ -51,6 +65,7 @@ deploy_file() {
     # 执行部署
     if ! scp "$file" "${server}:${target_path}/"; then
         __persiliao_error "文件上传失败: ${file}"
+        log_deployment "$file" "$env" "$server" "FAILED: scp error"
         return 1
     fi
 
@@ -62,7 +77,11 @@ deploy_file() {
                 mkdir -p ${target_path}
                 cd ${target_path}
                 docker compose down && docker compose up -d
-            "
+            " || {
+                __persiliao_error "Docker操作失败: ${file}"
+                log_deployment "$file" "$env" "$server" "FAILED: docker error"
+                return 1
+            }
             ;;
         *.zip)
             ssh "$server" "
@@ -72,7 +91,11 @@ deploy_file() {
                 unzip -q -d ${target_path}/index -o ${target_path}/${file}
                 rm -f ${target_path}/${file}
                 chmod -R 755 ${target_path}/index
-            "
+            " || {
+                __persiliao_error "解压操作失败: ${file}"
+                log_deployment "$file" "$env" "$server" "FAILED: unzip error"
+                return 1
+            }
             ;;
         *.apk)
             ssh "$server" "
@@ -82,10 +105,15 @@ deploy_file() {
                 ls -t ${target_path}/*.apk 2>/dev/null | tail -n +4 | xargs rm -f
                 # 创建最新版本链接
                 ln -sf ${target_path}/${file} ${target_path}/icp-app.apk
-            "
+            " || {
+                __persiliao_error "APK部署失败: ${file}"
+                log_deployment "$file" "$env" "$server" "FAILED: apk deployment error"
+                return 1
+            }
             ;;
     esac
 
+    log_deployment "$file" "$env" "$server" "SUCCESS"
     __persiliao_success "成功部署到 ${server}"
 }
 
@@ -120,6 +148,12 @@ collect_deploy_files() {
 # 主控制流程
 # ========================
 main() {
+    # 初始化日志文件
+    if [[ ! -f "${DEPLOY_LOG}" ]]; then
+        touch "${DEPLOY_LOG}"
+        __persiliao_notice "创建新的部署日志文件: ${DEPLOY_LOG}"
+    fi
+
     # 获取当前目录下所有匹配文件
     local files=($(collect_deploy_files))
     if [[ ${#files} -eq 0 ]]; then
@@ -127,11 +161,18 @@ main() {
         exit 1
     fi
 
+    # 记录开始部署
+    echo -e "\n===== 新部署开始 [$(date +"%Y-%m-%d %H:%M:%S")] =====" >> "${DEPLOY_LOG}"
+    echo "待部署文件: ${(j:, :)files}" >> "${DEPLOY_LOG}"
+
     # 生产环境二次确认
     if [[ -n "${(M)files:#*-prod*}" ]]; then
         read -q "confirm?检测到生产环境文件，确认部署？(y/n) "
         echo
-        [[ "$confirm" != "y" ]] && exit 0
+        [[ "$confirm" != "y" ]] && {
+            echo "用户取消生产环境部署" >> "${DEPLOY_LOG}"
+            exit 0
+        }
     fi
 
     # 遍历处理所有文件
@@ -140,6 +181,7 @@ main() {
         local env=$(detect_environment "$file")
         if [[ "$env" == "unknown" ]]; then
             __persiliao_warning "跳过无法识别环境的文件: ${file}"
+            echo "跳过无法识别环境的文件: ${file}" >> "${DEPLOY_LOG}"
             continue
         fi
 
@@ -147,6 +189,7 @@ main() {
         local servers=(${=SERVER_GROUPS[$env]})
         if [[ ${#servers} -eq 0 ]]; then
             __persiliao_error "未配置 ${env} 环境的服务器组"
+            echo "错误: 未配置 ${env} 环境的服务器组" >> "${DEPLOY_LOG}"
             has_errors=1
             continue
         fi
@@ -172,8 +215,10 @@ main() {
     __persiliao_notice "部署环境: ${(j:, :)${(u)${files##*-}%%.*}}"
     if [[ $has_errors -eq 0 ]]; then
         __persiliao_success "所有文件部署成功!"
+        echo "部署结果: 所有文件部署成功" >> "${DEPLOY_LOG}"
     else
         __persiliao_error "部署完成，但部分操作失败"
+        echo "部署结果: 部分操作失败" >> "${DEPLOY_LOG}"
         exit 1
     fi
 }
