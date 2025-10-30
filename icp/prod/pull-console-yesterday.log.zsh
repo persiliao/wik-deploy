@@ -11,7 +11,7 @@ mkdir -p "$log_dir"
 
 # 循环下载一周内的日志
 current_date="$week_ago"
-while [[ "$current_date" < "$today" || "$current_date" == "$today" ]]; do
+while [[ "$current_date" < "$today" ]]; do
     # 调用你的copy_remote_logs函数
     copy_remote_logs "WIK.VPN.HK.Master10.1.3.61" "/opt/prod/icp/logs/sys-info.$current_date.log" "$log_dir"
     copy_remote_logs "WIK.VPN.HK.Master10.1.3.61" "/opt/prod/icp/logs/sys-error.$current_date.log" "$log_dir"
