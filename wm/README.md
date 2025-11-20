@@ -1,0 +1,1 @@
+http://dev-wms.wik-group.com/apk/2025/09/03/624d7319-06b5-4b82-808a-57815e1122d1Release-1.2.75.apk
