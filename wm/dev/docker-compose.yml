@@ -1,0 +1,22 @@
+services:
+  wik-wms-api:
+    image: cr.io/wik/wms-api
+    container_name: WIK-WMS-API
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+  wik-wms-ws:
+    image: cr.io/wik/wms-ws
+    container_name: WIK-WMS-WS
+    restart: unless-stopped
+    ports:
+      - '8081:8081'
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./logs/ws:/app/log
