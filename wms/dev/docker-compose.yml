@@ -1,7 +1,7 @@
 services:
   wik-wms-api:
     image: cr.io/wik/wms-api
-    container_name: WIK-WMS-API
+    container_name: wik-wms-api
     restart: unless-stopped
     ports:
       - '8080:8080'
@@ -11,7 +11,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
   wik-wms-ws:
     image: cr.io/wik/wms-ws
-    container_name: WIK-WMS-WS
+    container_name: wik-wms-ws
     restart: unless-stopped
     ports:
       - '8081:8081'
