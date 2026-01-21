@@ -1,6 +1,6 @@
 services:
   wik-wms-api:
-    image: cr.io/wik/wms-api
+    image: wik/wms-api
     container_name: wik-wms-api
     restart: unless-stopped
     ports:
