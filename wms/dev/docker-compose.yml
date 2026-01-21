@@ -6,9 +6,11 @@ services:
     ports:
       - '8080:8080'
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_PROFILES_ACTIVE=dev-persi-qas
     volumes:
       - /etc/localtime:/etc/localtime:ro
+      - ./api/logs:/app/log
+      - ./api/sap:/app/sap
   wik-wms-ws:
     image: cr.io/wik/wms-ws
     container_name: wik-wms-ws
@@ -19,4 +21,4 @@ services:
       - SPRING_PROFILES_ACTIVE=local
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - ./logs/ws:/app/log
+      - ./ws/logs:/app/log
